@@ -8,6 +8,7 @@ use Brightcove\Item\Video\Source;
 use Brightcove\Item\Video\Images;
 use Brightcove\Item\Playlist;
 use Brightcove\Item\CustomFields;
+use Brightcove\Item\Video\Folder;
 
 /**
   * This class provides uncached read access to the data via request functions.
@@ -227,6 +228,93 @@ class CMS extends API {
    */
   public function deleteSubscription($subscription_id) {
     $this->cmsRequest('DELETE', "/subscriptions/{$subscription_id}", NULL);
+  }
+
+  /**
+   * Lists folder objects with the given restrictions.
+   *
+   * @param int $limit
+   * @param int $offset
+   * @return Folder[]
+   */
+  public function listFolders($limit = NULL, $offset = NULL)
+  {
+    $query = '';
+    if (!empty($limit)) {
+      $query .= "&limit={$limit}";
+    }
+    if (isset($offset)) {
+      $query .= "&offset={$offset}";
+    }
+    if (strlen($query) > 0) {
+      $query = '?' . substr($query, 1);
+    }
+    return $this->cmsRequest('GET', "/folders{$query}", Folder::class, TRUE);
+  }
+
+  /**
+   * @param string $folder_id
+   * @return Folder
+   */
+  public function getFolder($folder_id)
+  {
+    return $this->cmsRequest('GET', "/folder/{$folder_id}", Folder::class);
+  }
+
+  /**
+   * @param string $folderName
+   * @return Folder
+   */
+  public function createFolder($folderName)
+  {
+    $folder = new Folder();
+    $folder->setName($folderName);
+    return $this->cmsRequest('POST', '/folders', Folder::class, FALSE, $folder);
+  }
+
+  /**
+   * @param Folder $folder
+   * @return Folder
+   */
+  public function updateFolder(Folder $folder)
+  {
+    $folder->fieldUnchanged('id');
+    return $this->cmsRequest('PATCH', "/folders/{$folder->getId()}", Folder::class, FALSE, $folder);
+  }
+
+  /**
+   * @param string $folder_id
+   */
+  public function deleteFolder($folder_id)
+  {
+    $this->cmsRequest('DELETE', "/folders/{$folder_id}", NULL);
+  }
+
+  /**
+   * @param Folder $folder
+   * @return Video[]
+   */
+  public function getVideosInFolder(Folder $folder)
+  {
+    return $this->cmsRequest('GET', "/folders/{$folder->getId()}/videos", Video::class, TRUE);
+  }
+
+  /**
+   * @param Folder $folder
+   * @param Video $video
+   */
+  public function addVideoToFolder(Folder $folder, Video $video)
+  {
+    $this->cmsRequest('PUT', "/folders/{$folder->getId()}/videos/{$video->getId()}", NULL);
+  }
+
+  /**
+   * @param Folder $folder
+   * @param Video $video
+   */
+  public function removeVideoFromFolder(Folder $folder, Video $video)
+  {
+    $this->cmsRequest('DELETE', "/folders/{$folder->getId()}/videos/{$video->getId()}", NULL);
   }
 
 }
